@@ -91,7 +91,6 @@ def generate_video(background_file, overlay_file, output_file, delay_start=0, fr
 
     # 3. Construct FFmpeg Command
     
-    bg_stream_name = "[0:v]"
     bg_filters = []
     
     # Logic for modifications to the background stream
@@ -99,69 +98,78 @@ def generate_video(background_file, overlay_file, output_file, delay_start=0, fr
     # But -ss is an input option, so it handles the start cut efficiently.
     # However, if we use -ss, timestamps in the filter chain start from 0 relative to the cut point.
     
+    audio_filters = ""
+    audio_map_opt = "-map 0:a?" # Default fallback
+
     if intermittent_pause:
         # Generate chained loop filters
-        # ... (Intermittent pause logic remains same, but we might check target_duration?)
-        # For now, let's assume Intermittent Pause and Output Duration might conflict or need logic.
-        # If output_duration > effective, we might need to loop more?
-        # The current intermittent implementation loops until `effective_duration`. 
-        # If user wants LONGER, we need to loop until `target_duration`.
-        
         # Frame indices relative to the trimmed input (0s = bg_start_cut)
-        
         current_time = delay_start
         accumulated_frames = 0
         pause_loop_count = int(pause_interval * fps)
         
-        # We add loops until we cover the whole duration
         loops = []
+        
+        # Audio concat variables
+        concat_inputs = []
+        Audio_segments = []
+        
+        # Initial Audio Segment (0 to delay_start)
+        if delay_start > 0:
+            Audio_segments.append(f"[0:a]atrim=start=0:end={delay_start},asetpts=PTS-STARTPTS[a_start];")
+            concat_inputs.append("[a_start]")
+        
+        curr_audio_time = delay_start
         
         # Use target_duration here if specified, else effective_duration
         loop_until_time = target_duration if output_duration_minutes > 0 else effective_duration
         
         while current_time < loop_until_time:
-            # We want to pause AT current_time
-            # Calculate frame index in the *current* stream state
-            # Original frame index would be current_time * fps
-            # But previous loops pushed it forward.
-            
-            # Actually, `loop` filter `start` takes the frame index of the incoming stream.
-            # Since we chain them, each filter sees a stream that is longer.
-            # But the "content" frame index is what we want to freeze.
-            # The content frame `F` is located at `F + accumulated_frames` in the stream?
-            # Yes. 
-            
             original_frame_idx = int(current_time * fps)
             target_frame_idx = original_frame_idx + accumulated_frames
             
-            # If current_time exceeds real video content, we are just looping the last frame?
-            # No, 'loop' repeats a frame inside the stream. 
-            # If we go past the end of video, we can't loop a frame that doesn't exist.
-            # So if target_duration > effective_duration, we must freeze the LAST frame eventually.
-            
             if current_time >= effective_duration:
-                 # We are past the video end. We need to extend the last frame.
-                 # tpad is better for this than loop.
                  break
 
             loops.append(f"loop=loop={pause_loop_count}:size=1:start={target_frame_idx}")
             
+            # AUDIO: Add Silence then Audio Segment
+            # 1. Silence
+            silence_tag = f"[silence_{len(loops)}]"
+            Audio_segments.append(f"aevalsrc=0:d={pause_interval}:s=44100{silence_tag};")
+            concat_inputs.append(silence_tag)
+            
+            # 2. Next Audio Segment
+            start_t = curr_audio_time
+            end_t = start_t + play_interval
+            if start_t < effective_duration:
+                 seg_tag = f"[a_seg_{len(loops)}]"
+                 # Use duration in atrim to be safe? No, start/end is fine with reset PTS
+                 # But we must be careful: atrim end is exclusive?
+                 Audio_segments.append(f"[0:a]atrim=start={start_t}:end={end_t},asetpts=PTS-STARTPTS{seg_tag};")
+                 concat_inputs.append(seg_tag)
+            
             accumulated_frames += pause_loop_count
-            
-            # Move time forward: we just paused (time doesn't advance in content), 
-            # then we play for play_interval
             current_time += play_interval
+            curr_audio_time += play_interval
             
-            # Loop limit check to prevent infinite generation
             if len(loops) > 1000:
                 print("Warning: Too many pause intervals. Truncating.")
                 break
         
         if loops:
             bg_filters.append(",".join(loops))
-        
-        # If target duration is longer than what we covered, we might need tpad at the end?
-        # Simpler logic for now: Just apply the loops we found.
+            # Build Audio Filter Chain
+            if len(concat_inputs) > 0:
+                # Add final segment if any remaining
+                # If we broke the loop, we might have remaining audio until end of video?
+                # But intermittent pauses usually continue?
+                # Let's just concat what we have.
+                n_segs = len(concat_inputs)
+                Audio_segments.append(f"{''.join(concat_inputs)}concat=n={n_segs}:v=0:a=1[outa];")
+                audio_filters = "".join(Audio_segments)
+                audio_map_opt = "-map [outa]"
+
             
     elif freeze_background:
         # Simple single freeze
@@ -176,6 +184,13 @@ def generate_video(background_file, overlay_file, output_file, delay_start=0, fr
         if stop_duration > 0:
              # Stop mode clone extends the stream.
              bg_filters.append(f"trim=duration={delay_start},tpad=stop_mode=clone:stop_duration={stop_duration}")
+             
+             # Audio: Trim to delay. Let's try without apad first, or explicit whole_dur if we had it.
+             # If we remove apad, the audio track is shorter than video. 
+             # Some players might dislike it, but FFmpeg should produce valid file.
+             # Let's try to use 'atrim' only to see if crash persists.
+             audio_filters = f"[0:a]atrim=duration={delay_start}[outa];"
+             audio_map_opt = "-map [outa]"
     
     # Construct the background filter chain
     if bg_filters:
@@ -191,6 +206,7 @@ def generate_video(background_file, overlay_file, output_file, delay_start=0, fr
     # Scale overlay, Key, Overlay
     filter_complex = (
         f"{filter_complex_part1}"
+        f"{audio_filters}"
         f"[1:v]{bg_stream_used}scale2ref=h=ih*0.85:w=-1[ovr_scaled][bg_ref];"
         f"[ovr_scaled]colorkey=0x00FF00:0.3:0.05[ovr_keyed];"
         f"[bg_ref][ovr_keyed]overlay=(W-w)/2:(H-h)/2:enable='gte(t,{delay_start})'[out]"
@@ -204,24 +220,11 @@ def generate_video(background_file, overlay_file, output_file, delay_start=0, fr
         "-stream_loop", "-1", "-i", overlay_file,
         "-filter_complex", filter_complex,
         "-map", "[out]",
-        "-map", "0:a?",
-        # Note: If we added pauses, the duration is longer!
-        # Do we want to cut the video at original effective duration?
-        # Or let it be longer (slow motion effect)?
-        # usually "Pause" implies extending duration.
-        # But if user wants to keep audio sync... audio won't pause with video loop filter!
-        # This is a video-only effect. Audio will desync.
-        # For this task (green screen automation), maintaining audio sync might not be the goal if audio is disabled or background audio is just music.
-        # However, to be safe, I should probably NOT cap duration to original if we want the pauses to be seen.
-        # But `main.py` had `-t` before.
-        # If we use `-t effective_duration`, we lose the end content that got pushed out.
-        # If I remove `-t`, it might go on forever due to loop overlay?
-        # `-t` was based on background duration.
-        # Let's verify: if intermittent, new duration = effective + accumulated_frames/fps.
+        audio_map_opt,
         
         "-c:v", "libx264",
         "-preset", "ultrafast",
-        "-c:a", "copy", # Audio copy will Desync if we pause video!
+        "-c:a", "aac", # Re-encode audio
         output_file
     ]
     
@@ -233,7 +236,7 @@ def generate_video(background_file, overlay_file, output_file, delay_start=0, fr
         cmd_ffmpeg.append("-t")
         cmd_ffmpeg.append(str(final_t))
         
-        print("Warning: Intermittent video pause will desync audio.")
+        print("Warning: Intermittent video pause processing active.")
     else:
         # Use target_duration 
         cmd_ffmpeg.append("-t")
@@ -248,20 +251,11 @@ def generate_video(background_file, overlay_file, output_file, delay_start=0, fr
     except subprocess.CalledProcessError as e:
         print(f"FFmpeg failed with error: {e}")
 
-    print("Running FFmpeg command:")
-    print(" ".join(cmd_ffmpeg))
-
-    try:
-        subprocess.run(cmd_ffmpeg, check=True)
-        print(f"Done! Output saved to {output_file}")
-    except subprocess.CalledProcessError as e:
-        print(f"FFmpeg failed with error: {e}")
-
 if __name__ == "__main__":
     # Example usage:
     # Set the background video and delay here
     generate_video(
-        background_file="background.mp4",
+        background_file="abackground.mp4",
         overlay_file="greenscreen.mp4",
         output_file="final_output.mp4",
         delay_start=4,

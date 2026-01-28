@@ -1,0 +1,6 @@
+Flask
+gunicorn
+moviepy
+yt-dlp
+requests
+werkzeug

@@ -1,0 +1,9 @@
+[0:v]trim=start=3:duration=4,setpts=PTS-STARTPTS[v0];
+[0:a]atrim=start=3:duration=4,asetpts=PTS-STARTPTS[a0];
+[0:v]trim=start=7:duration=0.05,setpts=PTS-STARTPTS,loop=loop=-1:size=1:start=0,trim=duration=1976[v1];
+anullsrc=channel_layout=stereo:sample_rate=44100:duration=1976[a1];
+[v0][v1]concat=n=2:v=1:a=0[bg_concat_v];
+[a0][a1]concat=n=2:v=0:a=1[bg_concat_a];
+[1:v][bg_concat_v]scale2ref=h=ih*0.85:w=-1[ovr_scaled][bg_ref];
+[ovr_scaled]colorkey=0x00FF00:0.3:0.05[ovr_keyed];
+[bg_ref][ovr_keyed]overlay=(W-w)/2:(H-h)/2:enable='gte(t,4)'[v_final]
