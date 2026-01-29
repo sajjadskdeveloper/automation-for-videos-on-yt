@@ -11,5 +11,8 @@ sudo apt install -y nodejs
 
 pkill gunicorn
 pkill gunicorn
+./venv/bin/gunicorn -c gunicorn_config.py app:app
+
+
 
 nohup ./venv/bin/gunicorn -c gunicorn_config.py app:app &
