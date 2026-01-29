@@ -2,6 +2,7 @@ import os
 
 import requests
 from urllib.parse import urlparse
+import time
 
 def download_video_from_url(url, output_folder="downloads"):
     """
@@ -12,44 +13,35 @@ def download_video_from_url(url, output_folder="downloads"):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
     try:
-        # Try pytubefix
         from pytubefix import YouTube
+        from pytubefix.cli import on_progress
+
+        print(f"Downloading video from: {url}")
         
-        yt = YouTube(url)
-        # Get highest resolution progressive stream if possible, or best video
-        stream = yt.streams.get_highest_resolution() 
-        if not stream:
-             # Fallback to filtering mp4
-             stream = yt.streams.filter(file_extension='mp4').first()
-             
-        if stream:
-             filename = stream.download(output_path=output_folder)
-             return filename
-        else:
-             raise Exception("No suitable stream found")
+        # Initialize YouTube object with the URL
+        yt = YouTube(url, on_progress_callback=on_progress)
+        
+        # Get the highest resolution stream
+        ys = yt.streams.get_highest_resolution()
+        
+        if not ys:
+            raise Exception("No suitable stream found")
+
+        # Generate a safe filename
+        safe_title = "".join([c for c in yt.title if c.isalpha() or c.isdigit() or c==' ']).rstrip()
+        filename = f"{safe_title}.mp4"
+        
+        # Download the video
+        print(f"Downloading '{yt.title}'...")
+        filepath = ys.download(output_path=output_folder, filename=filename)
+        
+        print(f"Download complete: {filepath}")
+        return filepath
 
     except Exception as e:
-        print(f"pytubefix failed: {e}. Trying direct download...")
-        
-        # Fallback to direct download
-        try:
-            response = requests.get(url, stream=True)
-            response.raise_for_status()
-            
-            # extract filename from url or header
-            a = urlparse(url)
-            filename = os.path.basename(a.path)
-            if not filename:
-                filename = "downloaded_video.mp4"
-            
-            filepath = os.path.join(output_folder, filename)
-            
-            with open(filepath, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            
-            return filepath
-        except Exception as e2:
-            print(f"Direct download failed: {e2}")
-            return None
+        print(f"Pytubefix download failed: {e}")
+        return None

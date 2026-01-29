@@ -1,0 +1,15 @@
+scp main.py app.py utils.py gunicorn_config.py requirements.txt deploy_setup.sh root@138.68.28.128:~/automation-for-videos-on-yt/
+phD5tH.Q7TarCNr
+
+
+
+chmod +x deploy_setup.sh
+./deploy_setup.sh
+
+sudo apt update
+sudo apt install -y nodejs
+
+pkill gunicorn
+pkill gunicorn
+
+nohup ./venv/bin/gunicorn -c gunicorn_config.py app:app &

@@ -3,7 +3,7 @@
 # Update and install system dependencies
 echo "Updating system and installing dependencies..."
 sudo apt-get update
-sudo apt-get install -y ffmpeg python3-pip python3-venv git
+sudo apt-get install -y ffmpeg python3-pip python3-venv git unzip
 
 # Create virtual environment if it doesn't exist
 if [ ! -d "venv" ]; then

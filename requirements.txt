@@ -1,6 +1,7 @@
 Flask
 gunicorn
 moviepy
-pytubefix
+
 requests
 werkzeug
+pytubefix
