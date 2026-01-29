@@ -68,21 +68,42 @@ def generate():
         if not os.path.exists(overlay_path):
              return jsonify({'error': 'Greenscreen file not found on server'}), 500
 
+        # Helper to get float from form with default
+        def get_float(key, default):
+            try:
+                val = request.form.get(key)
+                if val:
+                    return float(val)
+                return default
+            except (ValueError, TypeError):
+                return default
+
+        # Parse Form Data
+        delay_start = get_float('delay_start', 0.0)
+        bg_start_cut = get_float('bg_start_cut', 0.0)
+        
+        # Checkboxes send 'on' if checked, else None
+        freeze_background = request.form.get('freeze_background') == 'on'
+        intermittent_pause = request.form.get('intermittent_pause') == 'on'
+        
+        play_interval = get_float('play_interval', 2.0)
+        pause_interval = get_float('pause_interval', 2.0)
+        output_duration_minutes = get_float('output_duration_minutes', 0.0) # 0 means full length
+
         # Run Generation with Lock
         with generation_lock:
-            # Using default parameters as per previous task state
-            # You can expose these params in the form if needed later
             generate_video(
                 background_file=input_path,
                 overlay_file=overlay_path,
                 output_file=output_path,
-                delay_start=4,
-                bg_start_cut=3,
-                intermittent_pause=False, # Defaulting to false for simple use case
-                freeze_background=True,
-                output_duration_minutes=0.5 # Default short duration for testing, can be changed
+                delay_start=delay_start,
+                bg_start_cut=bg_start_cut,
+                intermittent_pause=intermittent_pause,
+                pause_interval=pause_interval,
+                play_interval=play_interval,
+                freeze_background=freeze_background,
+                output_duration_minutes=output_duration_minutes
             )
-            
         if os.path.exists(output_path):
             return jsonify({'filename': output_filename})
         else:

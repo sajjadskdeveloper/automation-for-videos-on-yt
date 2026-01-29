@@ -1,201 +1,477 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Green Screen Video Generator</title>
+    <title>Green Screen Magic | Video Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #00ff88;
+            --primary-dark: #00cc6a;
+            --secondary: #7000ff;
+            --bg-dark: #0a0a0a;
+            --surface: #1a1a1a;
+            --surface-hover: #252525;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --border: #333;
+            --radius-lg: 16px;
+            --radius-md: 8px;
+            --font-main: 'Outfit', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            outline: none;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #121212;
-            color: #e0e0e0;
+            font-family: var(--font-main);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(0, 255, 136, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(112, 0, 255, 0.05) 0%, transparent 40%);
         }
+
         .container {
-            background-color: #1e1e1e;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            background-color: rgba(26, 26, 26, 0.8);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+            padding: 2.5rem;
+            border-radius: var(--radius-lg);
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.6s ease-out;
         }
-        h1 {
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        header {
             text-align: center;
-            margin-bottom: 1.5rem;
-            color: #00ff00; /* Green screen vibe */
+            margin-bottom: 2rem;
         }
+
+        h1 {
+            font-size: 2rem;
+            margin: 0 0 0.5rem 0;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            background: var(--surface);
+            padding: 0.25rem;
+            border-radius: var(--radius-md);
+            display: flex;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 6px;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab:hover {
+            color: var(--text-main);
+        }
+
+        .tab.active {
+            background-color: var(--bg-dark);
+            color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Forms */
         .form-group {
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
         }
+
         label {
             display: block;
             margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 500;
         }
-        input[type="text"], input[type="file"] {
+
+        input[type="text"],
+        input[type="number"],
+        input[type="file"] {
             width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #333;
-            border-radius: 4px;
-            background-color: #2d2d2d;
-            color: #fff;
-            box-sizing: border-box;
+            padding: 0.8rem 1rem;
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        button {
+
+        input[type="file"] {
+            padding: 0.6rem;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.1);
+        }
+
+        /* Toggle & Checkbox */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--surface);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .checkbox-group:hover {
+            border-color: var(--text-muted);
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 1.2rem;
+            height: 1.2rem;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            color: var(--text-main);
+            cursor: pointer;
+            flex: 1;
+        }
+
+        /* Section Dividers */
+        .section-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin: 1.5rem 0 1rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+        }
+
+        /* Button */
+        button.btn-primary {
             width: 100%;
-            padding: 0.75rem;
-            background-color: #00ff00;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: #000;
             border: none;
-            border-radius: 4px;
+            border-radius: var(--radius-md);
             font-size: 1rem;
+            font-weight: 700;
             cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 1rem;
+            font-family: var(--font-main);
         }
-        button:hover {
-            background-color: #00cc00;
+
+        button.btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.3);
         }
+
+        button.btn-primary:active {
+            transform: translateY(0);
+        }
+
         button:disabled {
-            background-color: #555;
+            background: var(--border);
+            color: var(--text-muted);
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
+
+        /* Row Layout */
+        .row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .col {
+            flex: 1;
+        }
+
         .hidden {
             display: none;
         }
-        .tabs {
-            display: flex;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid #333;
+
+        /* Loader & Messages */
+        #loader {
+            display: none;
+            margin: 1.5rem auto;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 255, 136, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
         }
-        .tab {
-            flex: 1;
-            padding: 0.5rem;
-            text-align: center;
-            cursor: pointer;
-            background-color: #1e1e1e;
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
-        .tab.active {
-            border-bottom: 2px solid #00ff00;
-            font-weight: bold;
-        }
+
         #message {
             margin-top: 1rem;
             text-align: center;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            min-height: 1.2rem;
         }
-        .loader {
-            border: 4px solid #333;
-            border-top: 4px solid #00ff00;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 1rem auto;
-            display: none;
+
+        .success {
+            color: var(--primary);
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        .error {
+            color: #ff4d4d;
         }
-        .download-link {
+
+        .download-btn {
             display: block;
             text-align: center;
-            margin-top: 1rem;
-            color: #00ff00;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--surface);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius-md);
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .download-btn:hover {
+            background: rgba(0, 255, 136, 0.1);
         }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <h1>Video Generator</h1>
-    
-    <div class="tabs">
-        <div class="tab active" onclick="switchTab('url')">Link Input</div>
-        <div class="tab" onclick="switchTab('upload')">File Upload</div>
+    <div class="container">
+        <header>
+            <h1>Green Screen Magic</h1>
+            <p class="subtitle">Turn any video into a masterpiece</p>
+        </header>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('url')">Link Input</div>
+            <div class="tab" onclick="switchTab('upload')">File Upload</div>
+        </div>
+
+        <form id="generateForm" enctype="multipart/form-data">
+            <!-- Input Source -->
+            <div id="urlInput" class="form-group">
+                <label for="url">Video Link</label>
+                <input type="text" id="url" name="url" placeholder="Paste YouTube or video URL here...">
+            </div>
+
+            <div id="uploadInput" class="form-group hidden">
+                <label for="file">Upload Video</label>
+                <input type="file" id="file" name="file" accept="video/*">
+            </div>
+
+            <!-- Filters Section -->
+            <div class="section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <line x1="4" y1="21" x2="4" y2="14"></line>
+                    <line x1="4" y1="10" x2="4" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12" y2="3"></line>
+                    <line x1="20" y1="21" x2="20" y2="16"></line>
+                    <line x1="20" y1="12" x2="20" y2="3"></line>
+                    <line x1="1" y1="14" x2="7" y2="14"></line>
+                    <line x1="9" y1="8" x2="15" y2="8"></line>
+                    <line x1="17" y1="16" x2="23" y2="16"></line>
+                </svg>
+                Video Adjustments
+            </div>
+
+            <div class="row">
+                <div class="col form-group">
+                    <label for="delay_start">Delay Overlay (s)</label>
+                    <input type="number" id="delay_start" name="delay_start" value="0" step="0.1" min="0">
+                </div>
+                <div class="col form-group">
+                    <label for="bg_start_cut">Background Cut (s)</label>
+                    <input type="number" id="bg_start_cut" name="bg_start_cut" value="0" step="0.1" min="0">
+                </div>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="freeze_background" name="freeze_background">
+                <label for="freeze_background">Freeze Background when Overlay Starts</label>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="intermittent_pause" name="intermittent_pause"
+                    onchange="toggleIntermittentOptions()">
+                <label for="intermittent_pause">Intermittent Pause Effect</label>
+            </div>
+
+            <div id="intermittentOptions" class="hidden">
+                <div class="row">
+                    <div class="col form-group">
+                        <label for="play_interval">Play Duration (s)</label>
+                        <input type="number" id="play_interval" name="play_interval" value="2.0" step="0.1" min="0.1">
+                    </div>
+                    <div class="col form-group">
+                        <label for="pause_interval">Pause Duration (s)</label>
+                        <input type="number" id="pause_interval" name="pause_interval" value="2.0" step="0.1" min="0.1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="output_duration_minutes">Max Output Duration (Minutes)</label>
+                <input type="number" id="output_duration_minutes" name="output_duration_minutes" value="0" step="0.1"
+                    min="0" placeholder="0 for full length">
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-primary">Generate Video</button>
+        </form>
+
+        <div id="loader"></div>
+        <div id="message"></div>
+        <a id="downloadBtn" class="download-btn hidden" href="#" download>Download Final Video</a>
     </div>
 
-    <form id="generateForm" enctype="multipart/form-data">
-        <div id="urlInput" class="form-group">
-            <label for="url">Video Link</label>
-            <input type="text" id="url" name="url" placeholder="Paste video URL here...">
-        </div>
+    <script>
+        let currentTab = 'url';
 
-        <div id="uploadInput" class="form-group hidden">
-            <label for="file">Upload Video</label>
-            <input type="file" id="file" name="file" accept="video/*">
-        </div>
-
-        <button type="submit" id="submitBtn">Generate Video</button>
-    </form>
-
-    <div class="loader" id="loader"></div>
-    <div id="message"></div>
-    <a id="downloadBtn" class="download-link hidden" href="#" download>Download Final Video</a>
-</div>
-
-<script>
-    let currentTab = 'url';
-
-    function switchTab(tab) {
-        currentTab = tab;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        if (tab === 'url') {
-            document.querySelector('.tab:nth-child(1)').classList.add('active');
-            document.getElementById('urlInput').classList.remove('hidden');
-            document.getElementById('uploadInput').classList.add('hidden');
-        } else {
-            document.querySelector('.tab:nth-child(2)').classList.add('active');
-            document.getElementById('urlInput').classList.add('hidden');
-            document.getElementById('uploadInput').classList.remove('hidden');
-        }
-    }
-
-    document.getElementById('generateForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const submitBtn = document.getElementById('submitBtn');
-        const loader = document.getElementById('loader');
-        const message = document.getElementById('message');
-        const downloadBtn = document.getElementById('downloadBtn');
-
-        submitBtn.disabled = true;
-        loader.style.display = 'block';
-        message.innerText = 'Processing... This may take a while.';
-        downloadBtn.classList.add('hidden');
-
-        try {
-            const formData = new FormData(this);
-            formData.append('type', currentTab);
-
-            const response = await fetch('/generate', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                message.innerText = 'Success!';
-                downloadBtn.href = '/download/' + data.filename;
-                downloadBtn.classList.remove('hidden');
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            if (tab === 'url') {
+                document.querySelector('.tab:nth-child(1)').classList.add('active');
+                document.getElementById('urlInput').classList.remove('hidden');
+                document.getElementById('uploadInput').classList.add('hidden');
             } else {
-                message.innerText = 'Error: ' + (data.error || 'Unknown error');
+                document.querySelector('.tab:nth-child(2)').classList.add('active');
+                document.getElementById('urlInput').classList.add('hidden');
+                document.getElementById('uploadInput').classList.remove('hidden');
             }
-        } catch (error) {
-            message.innerText = 'Error: ' + error.message;
-        } finally {
-            submitBtn.disabled = false;
-            loader.style.display = 'none';
         }
-    });
-</script>
+
+        function toggleIntermittentOptions() {
+            const checkbox = document.getElementById('intermittent_pause');
+            const options = document.getElementById('intermittentOptions');
+            if (checkbox.checked) {
+                options.classList.remove('hidden');
+            } else {
+                options.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('generateForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const loader = document.getElementById('loader');
+            const message = document.getElementById('message');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            submitBtn.disabled = true;
+            loader.style.display = 'block';
+            message.innerText = 'Processing... This may take a few minutes.';
+            message.className = '';
+            downloadBtn.classList.add('hidden');
+
+            try {
+                const formData = new FormData(this);
+                formData.append('type', currentTab);
+
+                // Checkboxes don't send anything if unchecked, but let's handle that in backend?
+                // Actually standard HTML form behavior is fine, backend will use .get() which returns null if missing.
+                // But let's act smart, if checkbox is checked it sends "on", we want "true".
+                // Although FormData usually handles exact values.
+                // Let's manually ensure our boolean flags are explicit if needed?
+                // Nah, let's trust standard form submission and handle "on" in backend.
+
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    message.innerText = 'Video Generated Successfully!';
+                    message.className = 'success';
+                    downloadBtn.href = '/download/' + data.filename;
+                    downloadBtn.classList.remove('hidden');
+                } else {
+                    message.innerText = 'Error: ' + (data.error || 'Unknown error');
+                    message.className = 'error';
+                }
+            } catch (error) {
+                message.innerText = 'Error: ' + error.message;
+                message.className = 'error';
+            } finally {
+                submitBtn.disabled = false;
+                loader.style.display = 'none';
+            }
+        });
+    </script>
 
 </body>
+
 </html>
