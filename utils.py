@@ -1,5 +1,5 @@
 import os
-import yt_dlp
+
 import requests
 from urllib.parse import urlparse
 
@@ -13,23 +13,24 @@ def download_video_from_url(url, output_folder="downloads"):
         os.makedirs(output_folder)
 
     try:
-        # Try yt-dlp first
-        ydl_opts = {
-            'outtmpl': os.path.join(output_folder, '%(title)s.%(ext)s'),
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-        }
+        # Try pytubefix
+        from pytubefix import YouTube
         
-        # Check for cookies.txt
-        if os.path.exists('cookies.txt'):
-             ydl_opts['cookiefile'] = 'cookies.txt'
+        yt = YouTube(url)
+        # Get highest resolution progressive stream if possible, or best video
+        stream = yt.streams.get_highest_resolution() 
+        if not stream:
+             # Fallback to filtering mp4
+             stream = yt.streams.filter(file_extension='mp4').first()
              
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            filename = ydl.prepare_filename(info)
-            return filename
+        if stream:
+             filename = stream.download(output_path=output_folder)
+             return filename
+        else:
+             raise Exception("No suitable stream found")
 
     except Exception as e:
-        print(f"yt-dlp failed: {e}. Trying direct download...")
+        print(f"pytubefix failed: {e}. Trying direct download...")
         
         # Fallback to direct download
         try:
