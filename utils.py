@@ -72,8 +72,14 @@ def download_video_from_url(url, output_folder="downloads"):
         print(f"Found video URL: {stream_url[:50]}...")
 
         # 2. Download the file
+        # IMPORTANT: Must use same User-Agent to avoid 403 Forbidden on signed URLs
+        download_headers = {
+            "User-Agent": headers["user-agent"],
+            "Referer": "https://www.youtube.com/" 
+        }
+        
         print(f"Downloading video...")
-        file_response = requests.get(stream_url, stream=True)
+        file_response = requests.get(stream_url, headers=download_headers, stream=True)
         file_response.raise_for_status()
         
         # Determine filename (simple timestamp fallback)
