@@ -99,7 +99,7 @@ def generate_video(background_file, overlay_file, output_file, delay_start=0, fr
     # However, if we use -ss, timestamps in the filter chain start from 0 relative to the cut point.
     
     audio_filters = ""
-    audio_map_opt = "-map 0:a?" # Default fallback
+    audio_map_opt = ["-map", "0:a?"] # Default fallback as list
 
     if intermittent_pause:
         # Generate chained loop filters
@@ -168,7 +168,7 @@ def generate_video(background_file, overlay_file, output_file, delay_start=0, fr
                 n_segs = len(concat_inputs)
                 Audio_segments.append(f"{''.join(concat_inputs)}concat=n={n_segs}:v=0:a=1[outa];")
                 audio_filters = "".join(Audio_segments)
-                audio_map_opt = "-map [outa]"
+                audio_map_opt = ["-map", "[outa]"]
 
             
     elif freeze_background:
@@ -190,7 +190,7 @@ def generate_video(background_file, overlay_file, output_file, delay_start=0, fr
              # Some players might dislike it, but FFmpeg should produce valid file.
              # Let's try to use 'atrim' only to see if crash persists.
              audio_filters = f"[0:a]atrim=duration={delay_start}[outa];"
-             audio_map_opt = "-map [outa]"
+             audio_map_opt = ["-map", "[outa]"]
     
     # Construct the background filter chain
     if bg_filters:
@@ -220,13 +220,18 @@ def generate_video(background_file, overlay_file, output_file, delay_start=0, fr
         "-stream_loop", "-1", "-i", overlay_file,
         "-filter_complex", filter_complex,
         "-map", "[out]",
-        audio_map_opt,
+    ]
+    
+    # Add audio map options if they exist
+    if audio_map_opt:
+        cmd_ffmpeg.extend(audio_map_opt)
         
+    cmd_ffmpeg.extend([
         "-c:v", "libx264",
         "-preset", "ultrafast",
         "-c:a", "aac", # Re-encode audio
         output_file
-    ]
+    ])
     
     # Fix duration and audio for intermittent pause
     if intermittent_pause:

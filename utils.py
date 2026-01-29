@@ -17,8 +17,12 @@ def download_video_from_url(url, output_folder="downloads"):
         ydl_opts = {
             'outtmpl': os.path.join(output_folder, '%(title)s.%(ext)s'),
             'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            'noplaylist': True,
         }
+        
+        # Check for cookies.txt
+        if os.path.exists('cookies.txt'):
+             ydl_opts['cookiefile'] = 'cookies.txt'
+             
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             filename = ydl.prepare_filename(info)

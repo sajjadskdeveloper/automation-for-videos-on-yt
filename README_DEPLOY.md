@@ -7,7 +7,25 @@ This project is ready for deployment on a DigitalOcean Droplet (Ubuntu).
 - An Ubuntu Droplet (2GB RAM recommended for video processing)
 - SSH Access to the Droplet
 
-## Deployment Steps
+## Quick & Simple Deployment (No Nginx/Systemd)
+If you just want to get it running quickly and don't care about domain names or advanced security right now, you can skip Nginx and Systemd.
+
+1.  **Transfer Files** & **Run Setup Script** (Same as above).
+2.  **Open Port 5000**:
+    ```bash
+    ufw allow 5000
+    ```
+3.  **Run in Background**:
+    Use `nohup` to keep it running after you disconnect.
+    ```bash
+    nohup ./venv/bin/gunicorn -c gunicorn_config.py app:app &
+    ```
+    *Stop it later with `pkill gunicorn`.*
+
+4.  **Access**: Go to `http://your_droplet_ip:5000`
+
+---
+## Standard Production Steps (Recommended for long term)
 
 1.  **Transfer Files**:
     Upload your project files to the server. You can use direct upload, SCP, or git clone.
